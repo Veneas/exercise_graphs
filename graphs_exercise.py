@@ -61,8 +61,89 @@ def in_out_degree(graph):
     return in_degree, out_degree
 
 
+# =-=-=-=-=-=-=-=-=-=-=-= Task 3 =-=-=-=-=-=-=-=-=-=-=-=
+def dfs(graph, start):
+    """
+    A depth-first search starting from a given vertex.
+    Return a list of vertices in the exact order they were first visited.
+    :param graph:
+    :param start:
+    :return:
+    """
+
+    visited = set()     # Lookup to check if the vertex was seen
+    order = []          # Keeping track of the exact visitation seq
+
+    # Defining recursive helper func to do the walking
+    def explore(vertex):
+        visited.add(vertex)
+        order.append(vertex)
+
+        # Tie-break rule: sorting neighbours alphabetically
+        for neighbour in sorted(graph[vertex]):
+            # Only visiting if havent been there yet
+            if neighbour not in visited:
+                explore(neighbour)
+
+    # Kicking off the recursion from the start vertex
+    explore(start)
+
+    return order
 
 
+def connected_components(graph):
+    """
+    Finds all maximal connected components in an undirected graph.
+    Returns a list of sets, where each set contains the vertices of one component.
+    :param graph:
+    :return:
+    """
+
+    visited_global = set()
+    components = []
+
+    # Checking every vertex in the graph
+    for vertex in graph:
+        # If havents visited this vettex in any previous DFS run
+        if vertex not in visited_global:
+            # start a new DFS to find everything connected to it
+            reachable = dfs(graph, vertex)
+
+            # Adding all newly found vertices to global visited list
+            visited_global.update(reachable)
+
+            # Storing this components as a set
+            components.append(set(reachable))
+
+    return components
+
+
+def is_weakly_connected(graph):
+    """
+    Checks if a directed graph is weakly connected.
+    It does this by "undirected shadow" of the graph and checking if that shadow has
+    exactly 1 connected component.
+    :param graph:
+    :return:
+    """
+    if not graph:
+        return True
+
+    # Inizialising a new shadow graph with empty lists of all vertices
+    shadow = {vertex: [] for vertex in graph}
+
+    #Populating the shadow graph with undirected edges
+    for u, neighbours in graph.items():
+        for v in neighbours:
+            shadow[u].append(v)
+            shadow[v].append(u) # Adding reverse edge to get undirected
+
+
+     # Checking the connected components of shadow graph
+    components = connected_components(shadow)
+
+    # its weakly connected if all vertices from exactly one large group
+    return len(components) == 1
 
 # =-=-=-=-=-=-=-=-=-=-=-=
 #         MAIN
@@ -96,3 +177,13 @@ if __name__ == '__main__':
     # Self-check
     print("\nSelf-check passed (in == out == edges)?",
           sum(in_deg.values()) == sum(out_deg.values()) == len(E))
+
+    # =-=-=-=-=-=-=-=-=-=-=-= Task 3 =-=-=-=-=-=-=-=-=-=-=-=
+    print("\nDFS starting from P1: ", dfs(undirected_graph, "P1"))
+    # Adding a disconnected component to test connected_components
+    disconnected_edges = [("A", "B"), ("C", "D")]
+    disc_graph = build_adjacency_list(disconnected_edges, directed=False)
+
+    print("\nConnected components: (2 sets!)", connected_components(disc_graph))
+    print("\nIs the directed PPI graph weakly connected?", is_weakly_connected(disc_graph))
+
