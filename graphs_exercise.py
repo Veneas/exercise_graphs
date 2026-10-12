@@ -145,6 +145,83 @@ def is_weakly_connected(graph):
     # its weakly connected if all vertices from exactly one large group
     return len(components) == 1
 
+# =-=-=-=-=-=-=-=-=-=-=-= Task 4 =-=-=-=-=-=-=-=-=-=-=-=
+
+def eulerian_type(graph, directed=False):
+    """
+    Determines if a graph has an Eulerian circuit, path, or none.
+    :param graph:
+    :param directed:
+    :return:
+    """
+
+    if not directed:
+        # Undirected graph logic
+        # Checking connectivity
+        comps = connected_components(graph)
+        degs = degrees(graph)
+
+        # Caring only about components that actually have edges.
+        # Isolated vertices dont break Eulerian paths
+        active_comps = [c for c in comps if any(degs[v] > 0 for v in c)]
+        if len(active_comps) > 1:
+            return "none"
+
+        # Counting vertices with an odd degree
+        odd_count = sum(1 for v, d in degs.items() if d % 2 != 0)
+
+        # Applying eulerian rules
+        if odd_count == 0:
+            return "circuit"
+        elif odd_count == 2:
+            return "path"
+        else:
+            return "none"
+    else:
+        # Directed graph logic
+
+        # Checking weak connectivity
+        in_deg, out_deg = in_out_degree(graph)
+
+        # Similarly to undirectred, ensuring all edges from a signle connected component
+        # builing a shawdow to check active components
+        shadow = {v: [] for v in graph}
+        for u, neighs in graph.items():
+            for v in neighs:
+                shadow[u].append(v)
+                shadow[v].append(u)
+
+        comps = connected_components(shadow)
+        active_comps = [c for c in comps if any(len(shadow[v]) > 0 for v in c)]
+        if len(active_comps) > 1:
+            return "none"
+
+        # COunting degree imbalances
+        start_nodes = 0
+        end_nodes = 0
+
+        for v in graph:
+            diff = out_deg[v] - in_deg[v]
+
+            if diff == 0:
+                continue
+            elif diff == 1:
+                start_nodes += 1
+            elif diff == -1:
+                end_nodes += 1
+            else:
+                # If any vertex has an excess, an eulerian path is impossible
+                return "none"
+        # Applying eulerian rules
+        if start_nodes == 0 and end_nodes == 0:
+            return "circuit"
+        elif start_nodes == 1 and end_nodes == 1:
+            return "path"
+        else:
+            return "None"
+
+
+
 # =-=-=-=-=-=-=-=-=-=-=-=
 #         MAIN
 # =-=-=-=-=-=-=-=-=-=-=-=
@@ -187,3 +264,6 @@ if __name__ == '__main__':
     print("\nConnected components: (2 sets!)", connected_components(disc_graph))
     print("\nIs the directed PPI graph weakly connected?", is_weakly_connected(disc_graph))
 
+    # =-=-=-=-=-=-=-=-=-=-=-= Task 4 =-=-=-=-=-=-=-=-=-=-=-=
+    print("\n Undirected PPI eulerian type:", eulerian_type(undirected_graph, directed=False))
+    print("\n Directed PPI eulerian type:", eulerian_type(disc_graph, directed=True))
